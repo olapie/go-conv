@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -343,7 +344,7 @@ func GetUnmarshalFunc(contentType string) UnmarshalFunc {
 
 func GetHTTPResult[T any](resp *http.Response) (T, error) {
 	var res T
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		return res, fmt.Errorf("read resp body: %v", err)
