@@ -16,43 +16,41 @@ import (
 )
 
 const (
-	_Plain    = "text/plain"
-	_HTML     = "text/html"
-	_XML2     = "text/xml"
-	_CSS      = "text/css"
-	_XML      = "application/xml"
-	_XHTML    = "application/xhtml+xml"
-	_Protobuf = "application/x-protobuf"
+	mimetypeTextPlain = "text/plain"
+	mimetypeHTML      = "text/html"
+	mimetypeXML2      = "text/xml"
+	mimetypeCSS       = "text/css"
+	mimetypeXML       = "application/xml"
+	mimetypeXHTML     = "application/xhtml+xml"
+	mimetypeProtobuf  = "application/x-protobuf"
 
-	_FormData = "multipart/form-data"
-	_GIF      = "image/gif"
-	_JPEG     = "image/jpeg"
-	_PNG      = "image/png"
-	_WEBP     = "image/webp"
-	_ICON     = "image/x-icon"
+	mimetypeFormData = "multipart/form-data"
+	mimetypeGIF      = "image/gif"
+	mimetypeJPEG     = "image/jpeg"
+	mimetypePNG      = "image/png"
+	mimetypeWEBP     = "image/webp"
+	mimetypeICON     = "image/x-icon"
 
-	_MPEG = "video/mpeg"
+	mimetypeMPEG = "video/mpeg"
 
-	_FormURLEncoded = "application/x-www-form-urlencoded"
-	_OctetStream    = "application/octet-stream"
-	_JSON           = "application/json"
-	_PDF            = "application/pdf"
-	_MSWord         = "application/msword"
-	_GZIP           = "application/x-gzip"
-	_WASM           = "application/wasm"
-	_ContentType    = "Content-Type"
-	_AcceptEncoding = "Accept-Encoding"
+	mimetypeFormURLEncoded = "application/x-www-form-urlencoded"
+	mimetypeOctetStream    = "application/octet-stream"
+	mimetypeJSON           = "application/json"
+	mimetypePDF            = "application/pdf"
+	mimetypeMSWord         = "application/msword"
+	mimetypeGZIP           = "application/x-gzip"
+	mimetypeWASM           = "application/wasm"
+	mimetypeContentType    = "Content-Type"
+	mimetypeAcceptEncoding = "Accept-Encoding"
+)
 
-	_CharsetUTF8 = "charset=utf-8"
-
-	_charsetSuffix = "; " + _CharsetUTF8
-
-	_PlainUTF8 = _Plain + _charsetSuffix
-
-	// Hope this style is better than HTMLUTF8, etc.
-	_HtmlUTF8 = _HTML + _charsetSuffix
-	_JsonUTF8 = _JSON + _charsetSuffix
-	_XmlUTF8  = _XML + _charsetSuffix
+const (
+	charsetUTF8       = "charset=utf-8"
+	charsetUTF8Suffix = "; " + charsetUTF8
+	textPlainUTF8     = mimetypeTextPlain + charsetUTF8Suffix
+	htmlUTF8          = mimetypeHTML + charsetUTF8Suffix
+	jsonUTF8          = mimetypeJSON + charsetUTF8Suffix
+	xmlUTF8           = mimetypeXML + charsetUTF8Suffix
 )
 
 // ToHTTPAttachment returns value for Content-Disposition
@@ -62,7 +60,7 @@ func ToHTTPAttachment(filename string) string {
 }
 
 func GetHTTPContentType(h http.Header) string {
-	t := h.Get(_ContentType)
+	t := h.Get(mimetypeContentType)
 	for i, ch := range t {
 		if ch == ' ' || ch == ';' {
 			t = t[:i]
@@ -74,7 +72,7 @@ func GetHTTPContentType(h http.Header) string {
 
 func IsMIMETextType(typ string) bool {
 	switch typ {
-	case _Plain, _HTML, _CSS, _XML, _XML2, _XHTML, _JSON, _PlainUTF8, _HtmlUTF8, _JsonUTF8, _XmlUTF8:
+	case mimetypeTextPlain, mimetypeHTML, mimetypeCSS, mimetypeXML, mimetypeXML2, mimetypeXHTML, mimetypeJSON, textPlainUTF8, htmlUTF8, jsonUTF8, xmlUTF8:
 		return true
 	default:
 		return false
@@ -82,7 +80,7 @@ func IsMIMETextType(typ string) bool {
 }
 
 func GetHTTPAcceptEncodings(h http.Header) []string {
-	a := strings.Split(h.Get(_AcceptEncoding), ",")
+	a := strings.Split(h.Get(mimetypeAcceptEncoding), ",")
 	for i, s := range a {
 		a[i] = strings.TrimSpace(s)
 	}
@@ -162,13 +160,13 @@ func ParseHTTPRequest(req *http.Request, memInBytes int64) (map[string]any, []by
 	typ := GetHTTPContentType(req.Header)
 	params := map[string]any{}
 	switch typ {
-	case _HTML, _Plain:
+	case mimetypeHTML, mimetypeTextPlain:
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			return params, nil, fmt.Errorf("read html or plain body: %w", err)
 		}
 		return params, body, nil
-	case _JSON:
+	case mimetypeJSON:
 		body, err := ioutil.ReadAll(req.Body)
 		req.Body.Close()
 		if err != nil {
@@ -188,7 +186,7 @@ func ParseHTTPRequest(req *http.Request, memInBytes int64) (map[string]any, []by
 			}
 		}
 		return params, body, nil
-	case _FormURLEncoded:
+	case mimetypeFormURLEncoded:
 		// TODO: will crash
 		//body, err := req.GetBody()
 		//if err != nil {
@@ -203,7 +201,7 @@ func ParseHTTPRequest(req *http.Request, memInBytes int64) (map[string]any, []by
 			return params, nil, fmt.Errorf("parse form: %w", err)
 		}
 		return URLValuesToMap(req.Form), nil, nil
-	case _FormData:
+	case mimetypeFormData:
 		err := req.ParseMultipartForm(memInBytes)
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse multipart form: %w", err)

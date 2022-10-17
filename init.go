@@ -6,9 +6,9 @@ import (
 )
 
 func init() {
-	RegisterUnmarshalFunc(_JSON, json.Unmarshal)
-	RegisterUnmarshalFunc(_JsonUTF8, json.Unmarshal)
-	RegisterUnmarshalFunc(_XML, xml.Unmarshal)
-	RegisterUnmarshalFunc(_XML2, xml.Unmarshal)
-	RegisterUnmarshalFunc(_XmlUTF8, xml.Unmarshal)
+	RegisterUnmarshalFunc(mimetypeJSON, json.Unmarshal)
+	RegisterUnmarshalFunc(jsonUTF8, json.Unmarshal)
+	RegisterUnmarshalFunc(mimetypeXML, xml.Unmarshal)
+	RegisterUnmarshalFunc(mimetypeXML2, xml.Unmarshal)
+	RegisterUnmarshalFunc(xmlUTF8, xml.Unmarshal)
 }
