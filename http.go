@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -352,6 +353,10 @@ func GetHTTPResult[T any](resp *http.Response) (T, error) {
 	}
 
 	if any(res) == nil {
+		return res, nil
+	}
+
+	if val := reflect.ValueOf(res); val.Kind() == reflect.Struct && val.Type().NumField() == 0 {
 		return res, nil
 	}
 
