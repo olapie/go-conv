@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 )
 
 // AES crypt data with key, iv
@@ -20,7 +21,7 @@ func AES(data []byte, key []byte, iv []byte) error {
 	}
 
 	if n != 16 && n != 24 && n != 32 {
-		return errors.New("invalid key")
+		return fmt.Errorf("key length must be 16, 24, or 32, actually is %d", n)
 	}
 
 	block, err := aes.NewCipher(key)
