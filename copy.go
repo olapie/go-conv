@@ -93,3 +93,19 @@ func DeepNew(t reflect.Type) reflect.Value {
 	}
 	return v
 }
+
+func CloneSlice[T any](a []T) []T {
+	res := make([]T, len(a))
+	for i, v := range a {
+		res[i] = v
+	}
+	return res
+}
+
+func CloneMap[K comparable, V any](m map[K]V) map[K]V {
+	res := make(map[K]V, len(m))
+	for k, v := range m {
+		res[k] = v
+	}
+	return res
+}
