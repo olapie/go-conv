@@ -165,3 +165,10 @@ func IsInt(v any) bool {
 func IsNumber(v any) bool {
 	return IsInt(v) || IsUint(v) || IsFloat(v)
 }
+
+func Must[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
