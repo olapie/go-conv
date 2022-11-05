@@ -172,3 +172,9 @@ func Must[T any](v T, err error) T {
 	}
 	return v
 }
+
+func NoError(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
