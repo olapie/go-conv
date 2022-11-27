@@ -1,7 +1,6 @@
 package conv
 
 import (
-	"sort"
 	"time"
 )
 
@@ -52,10 +51,4 @@ func Min[T Number](a ...T) T {
 		}
 	}
 	return res
-}
-
-func SortNumbers[T Number](nums []T, asc bool) {
-	sort.Slice(nums, func(i, j int) bool {
-		return nums[i] < nums[j] == asc
-	})
 }

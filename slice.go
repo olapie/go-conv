@@ -1,6 +1,8 @@
 package conv
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func MustSlice[A any, B any](a []A, f func(A) B) []B {
 	b := make([]B, len(a))
@@ -48,4 +50,33 @@ func SliceToSet[A any, B comparable](a []A, f func(A) (B, error)) (map[B]bool, e
 		}
 	}
 	return m, nil
+}
+
+func UniqueSlice[E comparable](a []E) []E {
+	m := make(map[E]struct{}, len(a))
+	l := make([]E, 0, len(a))
+	for _, v := range a {
+		if _, ok := m[v]; ok {
+			continue
+		}
+		m[v] = struct{}{}
+		l = append(l, v)
+	}
+	return l
+}
+
+func ReverseSlice[E comparable](a []E) {
+	for i, j := 0, len(a)-1; i < j; i, j = i+1, j-1 {
+		a[i], a[j] = a[j], a[i]
+	}
+}
+
+func RemoveElement[E comparable](a []E, v E) []E {
+	for i, e := range a {
+		if e == v {
+			a = append(a[:i], a[i+1:]...)
+			break
+		}
+	}
+	return a
 }

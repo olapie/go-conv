@@ -13,10 +13,10 @@ var bulletRegexp = regexp.MustCompile(`[0-9\.\*]*`)
 // SquishString returns the string
 // first removing all whitespace on both ends of the string,
 // and then changing remaining consecutive whitespace groups into one space each.
-func SquishString(s string) string {
-	s = strings.TrimSpace(s)
-	s = whitespaceRegexp.ReplaceAllString(s, " ")
-	return s
+func SquishString[T ~string](s T) T {
+	str := strings.TrimSpace(string(s))
+	str = whitespaceRegexp.ReplaceAllString(str, " ")
+	return T(str)
 }
 
 func SquishStringFields(i any) {
@@ -60,13 +60,13 @@ func squishStructStringFields(v reflect.Value) {
 	}
 }
 
-func RemoveAllSpaces(s string) string {
-	return strings.ReplaceAll(SquishString(s), " ", "")
+func RemoveAllSpaces[T ~string](s T) T {
+	return T(strings.ReplaceAll(string(SquishString(s)), " ", ""))
 }
 
-func RemoveBullet(s string) string {
+func RemoveBullet[T ~string](s T) T {
 	s = SquishString(s)
-	a := strings.Split(s, " ")
+	a := strings.Split(string(s), " ")
 
 	if len(a) == 0 {
 		return ""
@@ -75,5 +75,5 @@ func RemoveBullet(s string) string {
 	if a[0] == "" {
 		a = a[1:]
 	}
-	return strings.Join(a, " ")
+	return T(strings.Join(a, " "))
 }
