@@ -1,180 +1,911 @@
 package conv
 
 import (
+	"container/list"
 	"errors"
 	"fmt"
+	"log"
+	"math"
+	"net/mail"
+	"net/url"
 	"reflect"
+	"strconv"
+	"strings"
+	"unsafe"
+
+	"go.olapie.com/conv/internal/rt"
 )
 
-var errNilValue = errors.New("value is nil")
+// ToBool converts i to bool
+// i can be bool, integer or string
+func ToBool(i any) (bool, error) {
+	i = rt.Indirect(i)
+	switch v := i.(type) {
+	case bool:
+		return v, nil
+	case nil:
+		return false, strconv.ErrSyntax
+	case string:
+		return strconv.ParseBool(v)
+	}
 
-// From html/template/content.go
-// Copyright 2011 The Go Authors. All rights reserved.
-// Indirect returns the value, after dereferencing as many times
-// as necessary to reach the base type (or nil).
-func Indirect(a any) any {
-	if a == nil {
-		return nil
+	if b, ok := i.([]byte); ok {
+		i = string(b)
 	}
-	if t := reflect.TypeOf(a); t.Kind() != reflect.Ptr {
-		// Avoid creating a reflect.Value if it's not a pointer.
-		return a
+	switch v := reflect.ValueOf(i); v.Kind() {
+	case reflect.Bool:
+		return v.Bool(), nil
+	case reflect.String:
+		return strconv.ParseBool(v.String())
 	}
-	v := reflect.ValueOf(a)
-	for v.Kind() == reflect.Ptr && !v.IsNil() {
-		v = v.Elem()
+
+	n, err := parseInt64(i)
+	if err != nil {
+		return false, fmt.Errorf("cannot convert %#v of type %T to bool", i, i)
 	}
-	return v.Interface()
+	return n != 0, nil
 }
 
-// From html/template/content.go
-// Copyright 2011 The Go Authors. All rights reserved.
-// IndirectToStringerOrError returns the value, after dereferencing as many times
-// as necessary to reach the base type (or nil) or an implementation of fmt.Stringer
-// or error,
-func IndirectToStringerOrError(a any) any {
-	if a == nil {
-		return nil
+// ToBoolSlice converts i to []bool
+// i is an array or slice with elements convertiable to bool
+func ToBoolSlice(i any) ([]bool, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
 	}
-
-	var errorType = reflect.TypeOf((*error)(nil)).Elem()
-	var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
-
-	v := reflect.ValueOf(a)
-	for !v.Type().Implements(fmtStringerType) && !v.Type().Implements(errorType) && v.Kind() == reflect.Ptr && !v.IsNil() {
-		v = v.Elem()
+	if l, ok := i.([]bool); ok {
+		return l, nil
 	}
-	return v.Interface()
+	v := reflect.ValueOf(i)
+	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
+		return nil, fmt.Errorf("cannot convert %#v of type %T to []bool", i, i)
+	}
+	num := v.Len()
+	res := make([]bool, num)
+	var err error
+	for j := 0; j < num; j++ {
+		res[j], err = ToBool(v.Index(j).Interface())
+		if err != nil {
+			return nil, fmt.Errorf("convert index %d: %w", i, err)
+		}
+	}
+	return res, nil
 }
 
-func IndirectReadableValue(v reflect.Value) reflect.Value {
-	for (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) && !v.IsNil() {
-		v = v.Elem()
+func ToFloat32(i any) (float32, error) {
+	v, err := ToFloat64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to float32", i, i)
+	}
+	if v > math.MaxFloat32 || v < -math.MaxFloat32 {
+		return 0, strconv.ErrRange
+	}
+	return float32(v), nil
+}
+
+func ToFloat64(i any) (float64, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return 0, strconv.ErrSyntax
+	}
+
+	if b, ok := i.([]byte); ok {
+		i = string(b)
+	}
+	v := reflect.ValueOf(i)
+	if rt.IsIntValue(v) {
+		return float64(v.Int()), nil
+	}
+
+	if rt.IsUintValue(v) {
+		return float64(v.Uint()), nil
+	}
+
+	if rt.IsFloatValue(v) {
+		return v.Float(), nil
+	}
+
+	switch v.Kind() {
+	case reflect.String:
+		return strconv.ParseFloat(v.String(), 64)
+	case reflect.Bool:
+		if v.Bool() {
+			return 1, nil
+		}
+		return 0, nil
+	default:
+		return 0, fmt.Errorf("cannot convert %#v of type %T to float64", i, i)
+	}
+}
+
+func ToFloat32Slice(i any) ([]float32, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
+	}
+	if l, ok := i.([]float32); ok {
+		return l, nil
+	}
+	v := reflect.ValueOf(i)
+	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
+		return nil, fmt.Errorf("cannot convert %#v of type %T to []float32", i, i)
+	}
+	num := v.Len()
+	res := make([]float32, num)
+	var err error
+	for j := 0; j < num; j++ {
+		res[j], err = ToFloat32(v.Index(j).Interface())
+		if err != nil {
+			return nil, fmt.Errorf("convert index %d: %w", i, err)
+		}
+	}
+	return res, nil
+}
+
+func ToFloat64Slice(i any) ([]float64, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
+	}
+	if l, ok := i.([]float64); ok {
+		return l, nil
+	}
+	v := reflect.ValueOf(i)
+	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {
+		return nil, fmt.Errorf("cannot convert %#v of type %T to []float64", i, i)
+	}
+	num := v.Len()
+	res := make([]float64, num)
+	var err error
+	for j := 0; j < num; j++ {
+		res[j], err = ToFloat64(v.Index(j).Interface())
+		if err != nil {
+			return nil, fmt.Errorf("convert index %d: %w", i, err)
+		}
+	}
+	return res, nil
+}
+
+const (
+	// MaxInt represents maximum int
+	MaxInt = 1<<(8*unsafe.Sizeof(int(0))-1) - 1
+	// MinInt represents minimum int
+	MinInt = -1 << (8*unsafe.Sizeof(int(0)) - 1)
+	// MaxUint represents maximum uint
+	MaxUint = 1<<(8*unsafe.Sizeof(uint(0))) - 1
+)
+
+// ToInt converts i to int
+func ToInt(i any) (int, error) {
+	n, err := parseInt64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to int64", i, i)
+	}
+	if n > MaxInt || n < MinInt {
+		return 0, strconv.ErrRange
+	}
+	return int(n), nil
+}
+
+// ToInt8 converts i to int8
+func ToInt8(i any) (int8, error) {
+	n, err := parseInt64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to int8", i, i)
+	}
+	if n > math.MaxInt8 || n < math.MinInt8 {
+		return 0, strconv.ErrRange
+	}
+	return int8(n), nil
+}
+
+// ToInt16 converts i to int16
+func ToInt16(i any) (int16, error) {
+	n, err := parseInt64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to int16", i, i)
+	}
+	if n > math.MaxInt16 || n < math.MinInt16 {
+		return 0, strconv.ErrRange
+	}
+	return int16(n), nil
+}
+
+func ToInt32(i any) (int32, error) {
+	n, err := parseInt64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to int32", i, i)
+	}
+	if n > math.MaxInt32 || n < math.MinInt32 {
+		return 0, strconv.ErrRange
+	}
+	return int32(n), nil
+}
+
+func MustInt32(i any) int32 {
+	v, err := ToInt32(i)
+	if err != nil {
+		log.Panic(err)
 	}
 	return v
 }
 
-func IndirectWritableValue(v reflect.Value, populate bool) reflect.Value {
-	for v.Kind() == reflect.Ptr {
-		if v.IsNil() {
-			if populate && v.CanSet() {
-				v.Set(reflect.New(v.Type().Elem()))
-			} else {
-				break
+func ToInt64(i any) (int64, error) {
+	return parseInt64(i)
+}
+
+func ToUint(i any) (uint, error) {
+	n, err := parseUint64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to uint", i, i)
+	}
+	if n > MaxUint {
+		return 0, strconv.ErrRange
+	}
+	return uint(n), nil
+}
+
+func ToUint8(i any) (uint8, error) {
+	n, err := parseUint64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to uint8", i, i)
+	}
+	if n > math.MaxUint8 {
+		return 0, strconv.ErrRange
+	}
+	return uint8(n), nil
+}
+
+func ToUint16(i any) (uint16, error) {
+	n, err := parseUint64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to uint16", i, i)
+	}
+	if n > math.MaxUint16 {
+		return 0, strconv.ErrRange
+	}
+	return uint16(n), nil
+}
+
+func ToUint32(i any) (uint32, error) {
+	n, err := parseUint64(i)
+	if err != nil {
+		return 0, fmt.Errorf("cannot convert %#v of type %T to uint32", i, i)
+	}
+	if n > math.MaxUint32 {
+		return 0, strconv.ErrRange
+	}
+	return uint32(n), nil
+}
+
+func ToUint64(i any) (uint64, error) {
+	return parseUint64(i)
+}
+
+func ToIntSlice(i any) ([]int, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
+	}
+	if l, ok := i.([]int); ok {
+		return l, nil
+	}
+	switch v := reflect.ValueOf(i); v.Kind() {
+	case reflect.Slice, reflect.Array:
+		num := v.Len()
+		res := make([]int, num)
+		var err error
+		for j := 0; j < num; j++ {
+			res[j], err = ToInt(v.Index(j).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("convert index %d: %w", j, err)
 			}
 		}
-		v = v.Elem()
+		return res, nil
+	default:
+		if k, err := ToInt(i); err == nil {
+			return []int{k}, nil
+		}
+		return nil, fmt.Errorf("cannot convert %v to slice", v.Kind())
 	}
-	if !v.CanSet() {
-		panic(fmt.Sprintf("Cannot set %v", v.Kind()))
-	}
-	return v
 }
 
-func IndirectKind(i any) reflect.Kind {
+func ToInt64Slice(i any) ([]int64, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
+	}
+	if l, ok := i.([]int64); ok {
+		return l, nil
+	}
+
+	switch v := reflect.ValueOf(i); v.Kind() {
+	case reflect.Slice, reflect.Array:
+		num := v.Len()
+		res := make([]int64, num)
+		var err error
+		for j := 0; j < num; j++ {
+			res[j], err = parseInt64(v.Index(j).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("convert element at index %d: %w", i, err)
+			}
+		}
+		return res, nil
+	default:
+		if k, err := ToInt64(i); err == nil {
+			return []int64{k}, nil
+		}
+		return nil, fmt.Errorf("cannot convert %#v of type %T to []int64", i, i)
+	}
+}
+
+func ToUintSlice(i any) ([]uint, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
+	}
+	if l, ok := i.([]uint); ok {
+		return l, nil
+	}
+
+	switch v := reflect.ValueOf(i); v.Kind() {
+	case reflect.Slice, reflect.Array:
+		num := v.Len()
+		res := make([]uint, num)
+		var err error
+		for j := 0; j < num; j++ {
+			res[j], err = ToUint(v.Index(j).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("convert element at index %d: %w", i, err)
+			}
+		}
+		return res, nil
+	default:
+		if ui, err := ToUint(i); err == nil {
+			return []uint{ui}, nil
+		}
+		return nil, fmt.Errorf("cannot convert %#v of type %T to []uint", i, i)
+	}
+}
+
+func ToUint64Slice(i any) ([]uint64, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
+	}
+	if l, ok := i.([]uint64); ok {
+		return l, nil
+	}
+
+	switch v := reflect.ValueOf(i); v.Kind() {
+	case reflect.Slice, reflect.Array:
+		num := v.Len()
+		res := make([]uint64, num)
+		var err error
+		for j := 0; j < num; j++ {
+			res[j], err = parseUint64(v.Index(j).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("convert element at index %d: %w", i, err)
+			}
+		}
+		return res, nil
+	default:
+		if ui, err := ToUint64(i); err == nil {
+			return []uint64{ui}, nil
+		}
+		return nil, fmt.Errorf("cannot convert %#v of type %T to []uint64", i, i)
+	}
+}
+
+func parseInt64(i any) (int64, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return 0, strconv.ErrSyntax
+	}
+	if b, ok := i.([]byte); ok {
+		i = string(b)
+	}
+	v := reflect.ValueOf(i)
+	if rt.IsIntValue(v) {
+		return v.Int(), nil
+	}
+
+	if rt.IsUintValue(v) {
+		n := v.Uint()
+		if n > math.MaxInt64 {
+			return 0, strconv.ErrRange
+		}
+		return int64(n), nil
+	}
+
+	if rt.IsFloatValue(v) {
+		return int64(v.Float()), nil
+	}
+
+	switch v.Kind() {
+	case reflect.Bool:
+		if v.Bool() {
+			return 1, nil
+		}
+		return 0, nil
+	case reflect.String:
+		n, err := strconv.ParseInt(v.String(), 0, 64)
+		if err == nil {
+			return n, nil
+		}
+		if errors.Is(err, strconv.ErrRange) {
+			return 0, err
+		}
+		if f, fErr := strconv.ParseFloat(v.String(), 64); fErr == nil {
+			return int64(f), nil
+		}
+		return 0, err
+	default:
+		return 0, strconv.ErrSyntax
+	}
+}
+
+func parseUint64(i any) (uint64, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return 0, strconv.ErrSyntax
+	}
+	if b, ok := i.([]byte); ok {
+		i = string(b)
+	}
+	v := reflect.ValueOf(i)
+	if rt.IsIntValue(v) {
+		n := v.Int()
+		if n < 0 {
+			return 0, strconv.ErrRange
+		}
+		return uint64(n), nil
+	}
+
+	if rt.IsUintValue(v) {
+		return v.Uint(), nil
+	}
+
+	if rt.IsFloatValue(v) {
+		f := v.Float()
+		if f < 0 {
+			return 0, strconv.ErrRange
+		}
+		return uint64(f), nil
+	}
+
+	switch v.Kind() {
+	case reflect.Bool:
+		if v.Bool() {
+			return 1, nil
+		}
+		return 0, nil
+	case reflect.String:
+		n, err := strconv.ParseInt(v.String(), 0, 64)
+		if err == nil {
+			if n < 0 {
+				return 0, strconv.ErrRange
+			}
+			return uint64(n), nil
+		}
+		if errors.Is(err, strconv.ErrRange) {
+			return 0, err
+		}
+		if f, fErr := strconv.ParseFloat(v.String(), 64); fErr == nil {
+			if f < 0 {
+				return 0, strconv.ErrRange
+			}
+			return uint64(f), nil
+		}
+		return 0, err
+	default:
+		return 0, strconv.ErrSyntax
+	}
+}
+
+func ToUniqueIntSlice(a []int) []int {
+	m := make(map[int]struct{}, len(a))
+	l := make([]int, 0, len(a))
+	for _, v := range a {
+		if _, ok := m[v]; ok {
+			continue
+		}
+		m[v] = struct{}{}
+		l = append(l, v)
+	}
+	return l
+}
+
+func ToUniqueInt64Slice(a []int64) []int64 {
+	m := make(map[int64]struct{}, len(a))
+	l := make([]int64, 0, len(a))
+	for _, v := range a {
+		if _, ok := m[v]; ok {
+			continue
+		}
+		m[v] = struct{}{}
+		l = append(l, v)
+	}
+	return l
+}
+
+func ToBytes(i any) ([]byte, error) {
+	i = rt.Indirect(i)
 	switch v := i.(type) {
-	case reflect.Type:
-		for v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
-		return v.Kind()
-	case reflect.Value:
-		for v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
-		return v.Kind()
-	case reflect.Kind:
-		return v
+	case []byte:
+		return v, nil
 	case nil:
-		return reflect.Invalid
-	default:
-		return IndirectKind(reflect.TypeOf(i))
+		return nil, strconv.ErrSyntax
+	case string:
+		return []byte(v), nil
 	}
+
+	v := reflect.ValueOf(i)
+	if v.Kind() == reflect.Slice && v.Type().Elem().Kind() == reflect.Uint8 {
+		return v.Bytes(), nil
+	}
+	return nil, fmt.Errorf("cannot convert %#v of type %T to []byte", i, i)
 }
 
-func VarargsToSlice(keyValues ...any) (keys []string, values []any, err error) {
-	n := len(keyValues)
-	if n%2 != 0 {
-		err = errors.New("keyValues should be pairs of (string, any)")
-		return
+func ToByteArray8[T []byte | string](v T) [8]byte {
+	if len(v) > 8 {
+		panic("cannot convert into [8]byte")
+	}
+	var a [8]byte
+	copy(a[:], v[:])
+	return a
+}
+
+func ToByteArray16[T []byte | string](v T) [16]byte {
+	if len(v) > 16 {
+		panic("cannot convert into [16]byte")
+	}
+	var a [16]byte
+	copy(a[:], v[:])
+	return a
+}
+
+func ToByteArray32[T []byte | string](v T) [32]byte {
+	if len(v) > 32 {
+		panic("cannot convert into [32]byte")
+	}
+	var a [32]byte
+	copy(a[:], v[:])
+	return a
+}
+
+func ToByteArray64[T []byte | string](v T) [64]byte {
+	if len(v) > 64 {
+		panic("cannot convert into [64]byte")
+	}
+	var a [64]byte
+	copy(a[:], v[:])
+	return a
+}
+
+// ToString converts i to string
+// i can be string, integer types, bool, []byte or any types which implement fmt.Stringer
+func ToString(i any) (string, error) {
+	i = rt.IndirectToStringerOrError(i)
+	if i == nil {
+		return "", strconv.ErrSyntax
+	}
+	switch v := i.(type) {
+	case string:
+		return v, nil
+	case []byte:
+		return string(v), nil
+	case fmt.Stringer:
+		return v.String(), nil
+	case error:
+		return v.Error(), nil
 	}
 
-	keys, values = make([]string, 0, n/2), make([]any, 0, n/2)
-	for i := 0; i < n/2; i++ {
-		if k, ok := keyValues[2*i].(string); !ok {
-			err = fmt.Errorf("keyValues[%d] isn't convertible to string", i)
-			return
-		} else if keyValues[2*i+1] == nil {
-			err = fmt.Errorf("keyValues[%d] is nil", 2*i+1)
-			return
-		} else {
-			keys = append(keys, k)
-			values = append(values, keyValues[2*i+1])
+	v := reflect.ValueOf(i)
+	switch v.Kind() {
+	case reflect.String,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Bool, reflect.Float32, reflect.Float64:
+		return fmt.Sprint(v.Interface()), nil
+	case reflect.Slice:
+		if v.Type().Elem().Kind() == reflect.Uint8 {
+			return string(v.Bytes()), nil
 		}
 	}
-	return
+	return "", fmt.Errorf("cannot convert %#v of type %T to string", i, i)
 }
 
-func wrapError(err error, format string, args ...any) error {
-	if err == nil {
-		return nil
+func ToStringSlice(i any) ([]string, error) {
+	i = rt.Indirect(i)
+	if i == nil {
+		return nil, nil
 	}
-	s := fmt.Sprintf(format, args...)
-	return fmt.Errorf("%s: %w", s, err)
-}
+	if l, ok := i.([]string); ok {
+		return l, nil
+	}
 
-type NumberOrString interface {
-	int | int8 | int16 | int32 | int64 | uint | uint8 | uint16 | uint32 | uint64 | float32 | float64 | string
-}
-
-func IsString(v any) bool {
-	return reflect.ValueOf(v).Kind() == reflect.String
-}
-
-func IsBool(v any) bool {
-	return reflect.ValueOf(v).Kind() == reflect.Bool
-}
-
-func IsFloat(v any) bool {
-	switch reflect.ValueOf(v).Kind() {
-	case reflect.Float32, reflect.Float64:
-		return true
+	switch v := reflect.ValueOf(i); v.Kind() {
+	case reflect.Slice, reflect.Array:
+		num := v.Len()
+		res := make([]string, num)
+		var err error
+		for j := 0; j < num; j++ {
+			res[j], err = ToString(v.Index(j).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("convert element at index %d: %w", i, err)
+			}
+		}
+		return res, nil
 	default:
-		return false
+		if s, err := ToString(i); err == nil {
+			return strings.Fields(s), nil
+		}
+		return nil, fmt.Errorf("cannot convert %#v of type %T to []string", i, i)
 	}
 }
 
-func IsUint(v any) bool {
-	switch reflect.ValueOf(v).Kind() {
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return true
-	default:
-		return false
-	}
-}
-
-func IsInt(v any) bool {
-	switch reflect.ValueOf(v).Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return true
-	default:
-		return false
-	}
-}
-
-func IsNumber(v any) bool {
-	return IsInt(v) || IsUint(v) || IsFloat(v)
-}
-
-func Must[T any](v T, err error) T {
+func ToEmailAddress(s string) (string, error) {
+	addr, err := mail.ParseAddress(s)
 	if err != nil {
-		panic(err)
+		return "", err
+	}
+	return addr.String(), nil
+}
+
+func ToURL(s string) (string, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		return "", fmt.Errorf("parse: %w", err)
+	}
+	if u.Scheme == "" {
+		return "", errors.New("missing schema")
+	}
+	if u.Host == "" {
+		return "", errors.New("missing host")
+	}
+	return u.String(), nil
+}
+
+const (
+	kilobyte = 1 << (10 * (1 + iota)) // 1 << (10*1)
+	megabyte                          // 1 << (10*2)
+	gigabyte                          // 1 << (10*3)
+	terabyte                          // 1 << (10*4)
+	petabyte                          // 1 << (10*5)
+)
+
+func SizeToHumanReadable(size int64) string {
+	if size < kilobyte {
+		return fmt.Sprintf("%d B", size)
+	} else if size < megabyte {
+		return fmt.Sprintf("%.2f KB", float64(size)/float64(kilobyte))
+	} else if size < gigabyte {
+		return fmt.Sprintf("%.2f MB", float64(size)/float64(megabyte))
+	} else if size < terabyte {
+		return fmt.Sprintf("%.2f GB", float64(size)/float64(gigabyte))
+	} else if size < petabyte {
+		return fmt.Sprintf("%.2f TB", float64(size)/float64(terabyte))
+	} else {
+		return fmt.Sprintf("%.2f PB", float64(size)/float64(petabyte))
+	}
+}
+
+// ToList creates list.List
+// i can be nil, *list.List, or array/slice
+func ToList(i any) *list.List {
+	if i == nil {
+		return list.New()
+	}
+
+	if l, ok := i.(*list.List); ok {
+		return l
+	}
+
+	lt := reflect.TypeOf((*list.List)(nil))
+	if it := reflect.TypeOf(i); it.ConvertibleTo(lt) {
+		return reflect.ValueOf(i).Convert(lt).Interface().(*list.List)
+	}
+
+	l := list.New()
+	v := reflect.ValueOf(rt.Indirect(i))
+	if v.IsValid() && (v.Kind() == reflect.Slice || v.Kind() == reflect.Array) && !v.IsNil() {
+		for j := 0; j < v.Len(); j++ {
+			l.PushBack(v.Index(j).Interface())
+		}
+	} else {
+		l.PushBack(i)
+	}
+	return l
+}
+
+// SliceToList converts slice to list.List
+func SliceToList[E any](a []E) *list.List {
+	l := list.New()
+	for _, e := range a {
+		l.PushBack(e)
+	}
+	return l
+}
+
+type FuncE[S any, T any] func(S, error) (T, error)
+
+func ToFuncE[S any, T any](fn func(S) T) FuncE[S, T] {
+	return func(s S, err error) (T, error) {
+		var t T
+		if err != nil {
+			return t, err
+		}
+		return fn(s), nil
+	}
+}
+
+// MustToBoolSlice converts i to []bool, will panic if failed
+func MustToBoolSlice(i any) []bool {
+	v, err := ToBoolSlice(i)
+	if err != nil {
+		log.Panic(err)
 	}
 	return v
 }
 
-func NoError(err error) {
+// MustToBool converts i to bool, will panic if failed
+func MustToBool(i any) bool {
+	v, err := ToBool(i)
 	if err != nil {
-		panic(err)
+		log.Panic(err)
 	}
+	return v
+}
+
+func MustToFloat32(i any) float32 {
+	v, err := ToFloat32(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToFloat64(i any) float64 {
+	v, err := ToFloat64(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToFloat32Slice(i any) []float32 {
+	v, err := ToFloat32Slice(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToFloat64Slice(i any) []float64 {
+	v, err := ToFloat64Slice(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+// MustToInt panics if ToInt(i) failed
+func MustToInt(i any) int {
+	v, err := ToInt(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+// MustToInt8 panics if ToInt8(i) failed
+func MustToInt8(i any) int8 {
+	v, err := ToInt8(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+// MustToInt16 panics if ToInt16(i) failed
+func MustToInt16(i any) int16 {
+	v, err := ToInt16(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToInt64(i any) int64 {
+	v, err := ToInt64(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+func MustToUint(i any) uint {
+	v, err := ToUint(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+func MustToUint8(i any) uint8 {
+	v, err := ToUint8(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToUint16(i any) uint16 {
+	v, err := ToUint16(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToUint32(i any) uint32 {
+	v, err := ToUint32(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToUint64(i any) uint64 {
+	v, err := ToUint64(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToIntSlice(i any) []int {
+	v, err := ToIntSlice(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToInt64Slice(i any) []int64 {
+	v, err := ToInt64Slice(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToUintSlice(i any) []uint {
+	v, err := ToUintSlice(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+func MustToUint64Slice(i any) []uint64 {
+	v, err := ToUint64Slice(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToString(i any) string {
+	v, err := ToString(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
+}
+
+func MustToStringSlice(i any) []string {
+	v, err := ToStringSlice(i)
+	if err != nil {
+		log.Panic(err)
+	}
+	return v
 }

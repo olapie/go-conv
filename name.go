@@ -70,6 +70,8 @@ func ToSnake(s string) string {
 
 // ToCamel converts s from Snake to Camel
 func ToCamel(s string) string {
+	s = strings.ReplaceAll(s, ".", "_")
+	s = strings.ReplaceAll(s, "-", "_")
 	a := strings.Split(s, "_")
 	for i := 1; i < len(a); i++ {
 		if abbreviations[a[i]] {
@@ -102,23 +104,23 @@ func ToClassName(s string) string {
 	return s
 }
 
-// NameChecker check if names can be convertiable
+// NameChecker check if names can be convertible
 type NameChecker interface {
-	CheckName(src, dst string) bool
+	Check(src, dst string) bool
 }
 
-// NameCheckFunc defines func type which implements NameChecker
-type NameCheckFunc func(src string, dst string) bool
+// NameCheckerFunc defines func type which implements NameChecker
+type NameCheckerFunc func(src string, dst string) bool
 
-// CheckName checks if srcName can be converted to dstName
-func (f NameCheckFunc) CheckName(srcName, dstName string) bool {
+// Check checks if srcName can be converted to dstName
+func (f NameCheckerFunc) Check(srcName, dstName string) bool {
 	return f(srcName, dstName)
 }
 
-var defaultNameChecker = NameCheckFunc(CheckName)
+var DefaultNameChecker = NameCheckerFunc(Check)
 
-// CheckName is the default NameChecker
-func CheckName(a, b string) bool {
+// Check is the default NameChecker
+func Check(a, b string) bool {
 	if a == b {
 		return true
 	}

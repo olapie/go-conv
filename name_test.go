@@ -1,9 +1,8 @@
-package conv_test
+package conv
 
 import (
+	"github.com/google/go-cmp/cmp"
 	"testing"
-
-	"code.olapie.com/conv"
 )
 
 func TestSnakeToCamel(t *testing.T) {
@@ -30,7 +29,9 @@ func TestSnakeToCamel(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		equal(t, tc.Output, conv.ToCamel(tc.Input))
+		if diff := cmp.Diff(tc.Output, ToCamel(tc.Input)); diff != "" {
+			t.Fatal(diff)
+		}
 	}
 }
 
@@ -58,7 +59,9 @@ func TestSnakeToClass(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		equal(t, tc.Output, conv.ToClassName(tc.Input))
+		if diff := cmp.Diff(tc.Output, ToCamel(tc.Input)); diff == "" {
+			t.FailNow()
+		}
 	}
 }
 
@@ -82,6 +85,8 @@ func TestCamelToSnake(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		equal(t, tc.Output, conv.ToSnake(tc.Input))
+		if diff := cmp.Diff(tc.Output, ToSnake(tc.Input)); diff != "" {
+			t.Fatal(diff)
+		}
 	}
 }

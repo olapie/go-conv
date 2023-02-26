@@ -1,11 +1,10 @@
-package conv_test
+package conv
 
 import (
 	"encoding/json"
+	"github.com/google/go-cmp/cmp"
 	"testing"
 	"time"
-
-	"code.olapie.com/conv"
 )
 
 type Image struct {
@@ -41,7 +40,7 @@ func TestAssign(t *testing.T) {
 
 	var topic Topic
 	var i any = topic
-	err := conv.Assign(&i, params)
+	err := Assign(&i, params)
 	if err != nil {
 		t.FailNow()
 	}
@@ -68,7 +67,7 @@ func TestAssignSlice(t *testing.T) {
 
 	values := []any{params}
 	var topics []*Topic
-	err := conv.Assign(&topics, values)
+	err := Assign(&topics, values)
 	if err != nil || len(topics) == 0 {
 		t.FailNow()
 	}
@@ -107,7 +106,7 @@ func TestAssignStruct(t *testing.T) {
 		},
 	}
 
-	err := conv.Assign(user, userInfo)
+	err := Assign(user, userInfo)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -123,7 +122,7 @@ func TestAssignJSONToStruct(t *testing.T) {
 	tm := time.Now().Add(time.Hour)
 	i := new(Item)
 	jsonMap := map[string]any{"id": 10, "created_at": tm}
-	err := conv.Assign(i, jsonMap)
+	err := Assign(i, jsonMap)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -134,10 +133,11 @@ func TestAssignJSONToStruct(t *testing.T) {
 	}
 
 	i = new(Item)
-	jsonStr := conv.MustJSONString(tm)
+	jsonData, _ := json.Marshal(tm)
+	jsonStr := string(jsonData)
 	jsonStr = jsonStr[1 : len(jsonStr)-1]
 	jsonMap = map[string]any{"id": 10, "created_at": jsonStr}
-	err = conv.Assign(i, jsonMap)
+	err = Assign(i, jsonMap)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -157,7 +157,7 @@ func (j *jsonMap) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 	for k, v := range m {
-		(*j)[conv.MustInt(k)] = v
+		(*j)[MustToInt(k)] = v
 	}
 	return nil
 }
@@ -167,12 +167,13 @@ var _ json.Unmarshaler = (*jsonMap)(nil)
 func TestAssignMap(t *testing.T) {
 	var dst jsonMap
 	var src = map[string]int{"1": 2}
-	err := conv.Assign(&dst, src)
+	err := Assign(&dst, src)
 	if err != nil {
 		t.Error(err)
 	}
-	s1, s2 := conv.MustJSONString(dst), conv.MustJSONString(src)
-	if s1 != s2 {
-		t.Errorf("mismatch: \n%s\n%s\n", s1, s2)
+	dstData, _ := json.Marshal(dst)
+	srcData, _ := json.Marshal(src)
+	if diff := cmp.Diff(string(dstData), string(srcData)); diff != "" {
+		t.Error(diff)
 	}
 }
