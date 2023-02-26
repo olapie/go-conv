@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"code.olapie.com/sugar/v2/stringutil"
 	"go.olapie.com/conv/internal/plurals"
 )
 
@@ -93,8 +92,8 @@ func TestPlural(t *testing.T) {
 			t.Errorf("%v's plural should be %v, but got %v", strings.ToUpper(key), strings.ToUpper(value), v)
 		}
 
-		if v := Plural(stringutil.Title(key)); v != stringutil.Title(value) {
-			t.Errorf("%v's plural should be %v, but got %v", stringutil.Title(key), stringutil.Title(value), v)
+		if v := Plural(Title(key)); v != Title(value) {
+			t.Errorf("%v's plural should be %v, but got %v", Title(key), Title(value), v)
 		}
 
 		if v := Plural(key); v != value {
@@ -109,8 +108,8 @@ func TestSingular(t *testing.T) {
 			t.Errorf("%v's singular should be %v, but got %v", strings.ToUpper(value), strings.ToUpper(key), v)
 		}
 
-		if v := Singular(stringutil.Title(value)); v != stringutil.Title(key) {
-			t.Errorf("%v's singular should be %v, but got %v", stringutil.Title(value), strings.Title(key), v)
+		if v := Singular(Title(value)); v != Title(key) {
+			t.Errorf("%v's singular should be %v, but got %v", Title(value), strings.Title(key), v)
 		}
 
 		if v := Singular(value); v != key {

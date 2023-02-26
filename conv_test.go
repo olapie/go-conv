@@ -3,11 +3,10 @@ package conv
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"math"
 	"testing"
 	"time"
-
-	"code.olapie.com/sugar/v2/testutil"
 )
 
 func TestToBool(t *testing.T) {
@@ -113,7 +112,10 @@ func TestToBool(t *testing.T) {
 			if err != nil {
 				t.Error(err, c.Value)
 			}
-			testutil.Equal(t, c.Result, res)
+
+			if c.Result != res {
+				t.FailNow()
+			}
 		}
 	})
 
@@ -127,7 +129,9 @@ func TestToBool(t *testing.T) {
 			if err == nil {
 				t.Error("should fail", c)
 			}
-			testutil.Equal(t, false, res)
+			if res {
+				t.FailNow()
+			}
 		}
 	})
 }
@@ -206,7 +210,9 @@ func TestToFloat64(t *testing.T) {
 			if err != nil {
 				t.Error(err, c.Value)
 			}
-			testutil.Equal(t, c.Result, res)
+			if c.Result != res {
+				t.FailNow()
+			}
 		}
 	})
 
@@ -300,7 +306,10 @@ func TestToInt64(t *testing.T) {
 			if err != nil {
 				t.Error(err, c.Value)
 			}
-			testutil.Equal(t, c.Result, res)
+
+			if c.Result != res {
+				t.FailNow()
+			}
 		}
 	})
 
@@ -385,7 +394,10 @@ func TestToInt(t *testing.T) {
 			if err != nil {
 				t.Error(err, c.Value)
 			}
-			testutil.Equal(t, c.Result, res)
+
+			if c.Result != res {
+				t.FailNow()
+			}
 		}
 	})
 
@@ -472,7 +484,10 @@ func TestToUint64(t *testing.T) {
 			if err != nil {
 				t.Error(err, c.Value)
 			}
-			testutil.Equal(t, c.Result, res)
+
+			if c.Result != res {
+				t.FailNow()
+			}
 		}
 	})
 
@@ -500,7 +515,10 @@ func TestToIntSlice(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		testutil.Equal(t, []int{1, 12, -13, 100}, res)
+
+		if diff := cmp.Diff([]int{1, 12, -13, 100}, res); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 	t.Run("nil", func(t *testing.T) {
 		res, err := ToIntSlice(nil)
@@ -563,7 +581,9 @@ func TestToString(t *testing.T) {
 			if err != nil {
 				t.Error(err, c.Value)
 			}
-			testutil.Equal(t, c.Result, res)
+			if c.Result != res {
+				t.FailNow()
+			}
 		}
 	})
 
@@ -577,7 +597,10 @@ func TestToString(t *testing.T) {
 			if err == nil {
 				t.Error("should fail", c)
 			}
-			testutil.Equal(t, "", res)
+
+			if res != "" {
+				t.FailNow()
+			}
 		}
 	})
 }
@@ -589,7 +612,10 @@ func TestToSlice(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		testutil.Equal(t, []string{s}, l)
+
+		if diff := cmp.Diff([]string{s}, l); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 	t.Run("SingleInt", func(t *testing.T) {
 		s := 123
@@ -597,7 +623,10 @@ func TestToSlice(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		testutil.Equal(t, []string{fmt.Sprint(s)}, l)
+
+		if diff := cmp.Diff([]string{fmt.Sprint(s)}, l); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 	t.Run("IntSlice", func(t *testing.T) {
 		s := []int{123, -1, 9}
@@ -605,7 +634,10 @@ func TestToSlice(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		testutil.Equal(t, []string{"123", "-1", "9"}, l)
+
+		if diff := cmp.Diff([]string{"123", "-1", "9"}, l); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 	t.Run("MixSlice", func(t *testing.T) {
 		s := []any{123, "hello", "0x123"}
@@ -613,7 +645,10 @@ func TestToSlice(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		testutil.Equal(t, []string{"123", "hello", "0x123"}, l)
+
+		if diff := cmp.Diff([]string{"123", "hello", "0x123"}, l); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 	t.Run("MixArray", func(t *testing.T) {
 		s := [3]any{123, "hello", "0x123"}
@@ -621,6 +656,9 @@ func TestToSlice(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		testutil.Equal(t, []string{"123", "hello", "0x123"}, l)
+
+		if diff := cmp.Diff([]string{"123", "hello", "0x123"}, l); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 }
