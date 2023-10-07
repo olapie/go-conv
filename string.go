@@ -2,10 +2,11 @@ package conv
 
 import (
 	"fmt"
-	"go.olapie.com/conv/internal/rt"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"go.olapie.com/conv/internal/rt"
 )
 
 // ToString converts i to string

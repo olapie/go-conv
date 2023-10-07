@@ -2,10 +2,11 @@ package conv
 
 import (
 	"encoding/json"
-	"github.com/google/go-cmp/cmp"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type customByteSlice []byte

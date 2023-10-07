@@ -2,10 +2,11 @@ package conv
 
 import (
 	"fmt"
-	"go.olapie.com/conv/internal/rt"
 	"math"
 	"reflect"
 	"strconv"
+
+	"go.olapie.com/conv/internal/rt"
 )
 
 func ToFloat32(i any) (float32, error) {

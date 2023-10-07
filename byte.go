@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.olapie.com/conv/internal/rt"
-	"google.golang.org/protobuf/proto"
 	"reflect"
 	"strconv"
+
+	"go.olapie.com/conv/internal/rt"
+	"google.golang.org/protobuf/proto"
 )
 
 func ToBytes(i any) ([]byte, error) {

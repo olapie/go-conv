@@ -2,10 +2,11 @@ package conv
 
 import (
 	"fmt"
-	"go.olapie.com/conv/internal/rt"
 	"log"
 	"reflect"
 	"strconv"
+
+	"go.olapie.com/conv/internal/rt"
 )
 
 // ToBool converts i to bool

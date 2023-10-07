@@ -2,9 +2,10 @@ package conv
 
 import (
 	"encoding/json"
-	"github.com/google/go-cmp/cmp"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 type Image struct {

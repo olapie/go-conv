@@ -1,10 +1,11 @@
 package rt
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestIndirectKind(t *testing.T) {

@@ -2,8 +2,9 @@ package conv
 
 import (
 	"container/list"
-	"go.olapie.com/conv/internal/rt"
 	"reflect"
+
+	"go.olapie.com/conv/internal/rt"
 )
 
 // ToList creates list.List
