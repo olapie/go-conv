@@ -20,7 +20,7 @@ type Topic struct {
 	CreatedAt  time.Time
 }
 
-func TestAssign(t *testing.T) {
+func TestUnsafeAssign(t *testing.T) {
 	params := map[string]any{
 		"title": "this is title",
 		"cover_image": map[string]any{
@@ -40,7 +40,7 @@ func TestAssign(t *testing.T) {
 
 	var topic Topic
 	var i any = topic
-	err := Assign(&i, params)
+	err := UnsafeAssign(&i, params)
 	if err != nil {
 		t.FailNow()
 	}
@@ -48,7 +48,7 @@ func TestAssign(t *testing.T) {
 	t.Logf("%#v", i)
 }
 
-func TestAssignSlice(t *testing.T) {
+func TestUnsafeAssignSlice(t *testing.T) {
 	params := map[string]any{
 		"title": "this is title",
 		"cover_image": map[string]any{
@@ -67,7 +67,7 @@ func TestAssignSlice(t *testing.T) {
 
 	values := []any{params}
 	var topics []*Topic
-	err := Assign(&topics, values)
+	err := UnsafeAssign(&topics, values)
 	if err != nil || len(topics) == 0 {
 		t.FailNow()
 	}
@@ -95,7 +95,7 @@ type OpenAuthInfo struct {
 	OpenID   string
 }
 
-func TestAssignStruct(t *testing.T) {
+func TestUnsafeAssignStruct(t *testing.T) {
 	user := &User{}
 	userInfo := &UserInfo{
 		Id:   1,
@@ -106,7 +106,7 @@ func TestAssignStruct(t *testing.T) {
 		},
 	}
 
-	err := Assign(user, userInfo)
+	err := UnsafeAssign(user, userInfo)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -114,7 +114,7 @@ func TestAssignStruct(t *testing.T) {
 	t.Logf("%#v", user)
 }
 
-func TestAssignJSONToStruct(t *testing.T) {
+func TestUnsafeAssignJSONToStruct(t *testing.T) {
 	type Item struct {
 		ID        int64     `json:"id"`
 		CreatedAt time.Time `json:"created_at"`
@@ -122,7 +122,7 @@ func TestAssignJSONToStruct(t *testing.T) {
 	tm := time.Now().Add(time.Hour)
 	i := new(Item)
 	jsonMap := map[string]any{"id": 10, "created_at": tm}
-	err := Assign(i, jsonMap)
+	err := UnsafeAssign(i, jsonMap)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -137,7 +137,7 @@ func TestAssignJSONToStruct(t *testing.T) {
 	jsonStr := string(jsonData)
 	jsonStr = jsonStr[1 : len(jsonStr)-1]
 	jsonMap = map[string]any{"id": 10, "created_at": jsonStr}
-	err = Assign(i, jsonMap)
+	err = UnsafeAssign(i, jsonMap)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -164,10 +164,10 @@ func (j *jsonMap) UnmarshalJSON(bytes []byte) error {
 
 var _ json.Unmarshaler = (*jsonMap)(nil)
 
-func TestAssignMap(t *testing.T) {
+func TestUnsafeAssignMap(t *testing.T) {
 	var dst jsonMap
 	var src = map[string]int{"1": 2}
-	err := Assign(&dst, src)
+	err := UnsafeAssign(&dst, src)
 	if err != nil {
 		t.Error(err)
 	}

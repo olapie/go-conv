@@ -12,7 +12,7 @@ type customByteSlice []byte
 
 func TestMarshalCustomBytesType(t *testing.T) {
 	var input customByteSlice = []byte(time.Now().String())
-	output, err := Marshal(input)
+	output, err := UnsafeMarshal(input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,14 +45,14 @@ func (o *jsonObject) UnmarshalJSON(data []byte) error {
 
 func TestMarshalJSON(t *testing.T) {
 	o := jsonObject{ID: rand.Int63(), Text: time.Now().String()}
-	data, err := Marshal(&o)
+	data, err := UnsafeMarshal(&o)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log(string(data))
 
 	var o2 jsonObject
-	err = Unmarshal(data, &o2)
+	err = UnsafeUnmarshal(data, &o2)
 	if err != nil {
 		t.Fatal(err)
 	}

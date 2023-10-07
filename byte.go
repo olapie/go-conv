@@ -7,12 +7,66 @@ import (
 	"errors"
 	"fmt"
 	"go.olapie.com/conv/internal/rt"
-	"reflect"
-
 	"google.golang.org/protobuf/proto"
+	"reflect"
+	"strconv"
 )
 
-func Marshal(i any) ([]byte, error) {
+func ToBytes(i any) ([]byte, error) {
+	i = rt.Indirect(i)
+	switch v := i.(type) {
+	case []byte:
+		return v, nil
+	case nil:
+		return nil, strconv.ErrSyntax
+	case string:
+		return []byte(v), nil
+	}
+
+	v := reflect.ValueOf(i)
+	if v.Kind() == reflect.Slice && v.Type().Elem().Kind() == reflect.Uint8 {
+		return v.Bytes(), nil
+	}
+	return nil, fmt.Errorf("cannot convert %#v of type %T to []byte", i, i)
+}
+
+func ToByteArray8[T []byte | string](v T) [8]byte {
+	if len(v) > 8 {
+		panic("cannot convert into [8]byte")
+	}
+	var a [8]byte
+	copy(a[:], v[:])
+	return a
+}
+
+func ToByteArray16[T []byte | string](v T) [16]byte {
+	if len(v) > 16 {
+		panic("cannot convert into [16]byte")
+	}
+	var a [16]byte
+	copy(a[:], v[:])
+	return a
+}
+
+func ToByteArray32[T []byte | string](v T) [32]byte {
+	if len(v) > 32 {
+		panic("cannot convert into [32]byte")
+	}
+	var a [32]byte
+	copy(a[:], v[:])
+	return a
+}
+
+func ToByteArray64[T []byte | string](v T) [64]byte {
+	if len(v) > 64 {
+		panic("cannot convert into [64]byte")
+	}
+	var a [64]byte
+	copy(a[:], v[:])
+	return a
+}
+
+func UnsafeMarshal(i any) ([]byte, error) {
 	if data, ok := i.([]byte); ok {
 		return data, nil
 	}
@@ -52,7 +106,7 @@ func Marshal(i any) ([]byte, error) {
 	return nil, errors.New("cannot convert ")
 }
 
-func Unmarshal(data []byte, i any) (err error) {
+func UnsafeUnmarshal(data []byte, i any) (err error) {
 	if reflect.ValueOf(i).Kind() != reflect.Pointer {
 		return fmt.Errorf("cannot unmarshal to non pointer type: %T", i)
 	}
