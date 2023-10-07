@@ -52,3 +52,7 @@ func SizeToHumanReadable(size int64) string {
 		return fmt.Sprintf("%.2f PB", float64(size)/float64(petabyte))
 	}
 }
+
+func Pointer[T any](v T) *T {
+	return &v
+}
