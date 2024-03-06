@@ -427,7 +427,7 @@ func CastFromInt64Slice[T ~int64](a []int64) []T {
 	return res
 }
 
-func CastToIntP[T ~int](p *T) *int {
+func CastToIntP[T ~int | ~int32](p *T) *int {
 	if p == nil {
 		return nil
 	}
@@ -435,7 +435,7 @@ func CastToIntP[T ~int](p *T) *int {
 	return &v
 }
 
-func CastFromIntP[T ~int](p *int) *T {
+func CastFromIntP[T ~int | ~int32](p *int) *T {
 	if p == nil {
 		return nil
 	}
@@ -443,7 +443,7 @@ func CastFromIntP[T ~int](p *int) *T {
 	return &v
 }
 
-func CastToInt32P[T ~int32](p *T) *int32 {
+func CastToInt32P[T ~int32 | ~int](p *T) *int32 {
 	if p == nil {
 		return nil
 	}
@@ -451,7 +451,7 @@ func CastToInt32P[T ~int32](p *T) *int32 {
 	return &v
 }
 
-func CastFromInt32P[T ~int32](p *int32) *T {
+func CastFromInt32P[T ~int32 | ~int](p *int32) *T {
 	if p == nil {
 		return nil
 	}
@@ -459,7 +459,7 @@ func CastFromInt32P[T ~int32](p *int32) *T {
 	return &v
 }
 
-func CastToInt64P[T ~int64](p *T) *int64 {
+func CastToInt64P[T ~int64 | ~int](p *T) *int64 {
 	if p == nil {
 		return nil
 	}
@@ -467,7 +467,7 @@ func CastToInt64P[T ~int64](p *T) *int64 {
 	return &v
 }
 
-func CastFromInt64P[T ~int64](p *int64) *T {
+func CastFromInt64P[T ~int64 | ~int](p *int64) *T {
 	if p == nil {
 		return nil
 	}
