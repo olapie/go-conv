@@ -30,6 +30,9 @@ type UnsafeAssignOptions struct {
 // UnsafeAssign fill src underlying value and fields with dst
 func UnsafeAssign(dst any, src any, optFns ...func(options *UnsafeAssignOptions)) error {
 	options := &UnsafeAssignOptions{}
+	for _, fn := range optFns {
+		fn(options)
+	}
 
 	if dst == nil {
 		return errors.New("dst is nil")
