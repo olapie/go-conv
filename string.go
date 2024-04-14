@@ -5,14 +5,12 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"go.olapie.com/conv/internal/rt"
 )
 
 // ToString converts i to string
 // i can be string, integer types, bool, []byte or any types which implement fmt.Stringer
 func ToString(i any) (string, error) {
-	i = rt.IndirectToStringerOrError(i)
+	i = IndirectToStringerOrError(i)
 	if i == nil {
 		return "", strconv.ErrSyntax
 	}
@@ -43,7 +41,7 @@ func ToString(i any) (string, error) {
 }
 
 func ToStringSlice(i any) ([]string, error) {
-	i = rt.Indirect(i)
+	i = Indirect(i)
 	if i == nil {
 		return nil, nil
 	}

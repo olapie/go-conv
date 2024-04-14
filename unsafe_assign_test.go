@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 type Image struct {
@@ -174,7 +172,7 @@ func TestUnsafeAssignMap(t *testing.T) {
 	}
 	dstData, _ := json.Marshal(dst)
 	srcData, _ := json.Marshal(src)
-	if diff := cmp.Diff(string(dstData), string(srcData)); diff != "" {
+	if diff := diffSlice(dstData, srcData); diff != "" {
 		t.Error(diff)
 	}
 }

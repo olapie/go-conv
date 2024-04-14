@@ -5,8 +5,6 @@ import (
 	"math/rand"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 type customByteSlice []byte
@@ -17,7 +15,7 @@ func TestMarshalCustomBytesType(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff([]byte(input), output); diff != "" {
+	if diff := diffSlice(input, output); diff != "" {
 		t.Fatal(diff)
 	}
 }

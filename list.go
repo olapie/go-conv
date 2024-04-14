@@ -3,8 +3,6 @@ package conv
 import (
 	"container/list"
 	"reflect"
-
-	"go.olapie.com/conv/internal/rt"
 )
 
 // ToList creates list.List
@@ -24,7 +22,7 @@ func ToList(i any) *list.List {
 	}
 
 	l := list.New()
-	v := reflect.ValueOf(rt.Indirect(i))
+	v := reflect.ValueOf(Indirect(i))
 	if v.IsValid() && (v.Kind() == reflect.Slice || v.Kind() == reflect.Array) && !v.IsNil() {
 		for j := 0; j < v.Len(); j++ {
 			l.PushBack(v.Index(j).Interface())

@@ -6,8 +6,6 @@ import (
 	"math"
 	"testing"
 	"time"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestToBool(t *testing.T) {
@@ -517,7 +515,7 @@ func TestToIntSlice(t *testing.T) {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff([]int{1, 12, -13, 100}, res); diff != "" {
+		if diff := diffSlice([]int{1, 12, -13, 100}, res); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -614,7 +612,7 @@ func TestToSlice(t *testing.T) {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff([]string{s}, l); diff != "" {
+		if diff := diffSlice([]string{s}, l); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -625,7 +623,7 @@ func TestToSlice(t *testing.T) {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff([]string{fmt.Sprint(s)}, l); diff != "" {
+		if diff := diffSlice([]string{fmt.Sprint(s)}, l); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -636,7 +634,7 @@ func TestToSlice(t *testing.T) {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff([]string{"123", "-1", "9"}, l); diff != "" {
+		if diff := diffSlice([]string{"123", "-1", "9"}, l); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -647,7 +645,7 @@ func TestToSlice(t *testing.T) {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff([]string{"123", "hello", "0x123"}, l); diff != "" {
+		if diff := diffSlice([]string{"123", "hello", "0x123"}, l); diff != "" {
 			t.Fatal(diff)
 		}
 	})
@@ -658,7 +656,7 @@ func TestToSlice(t *testing.T) {
 			t.Error(err)
 		}
 
-		if diff := cmp.Diff([]string{"123", "hello", "0x123"}, l); diff != "" {
+		if diff := diffSlice([]string{"123", "hello", "0x123"}, l); diff != "" {
 			t.Fatal(diff)
 		}
 	})

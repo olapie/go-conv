@@ -1,4 +1,4 @@
-package rt
+package conv
 
 import (
 	"bytes"
@@ -260,6 +260,8 @@ func DeepNew(t reflect.Type) reflect.Value {
 			sliceVal := reflect.New(ft.Type).Elem()
 			sliceVal = reflect.Append(sliceVal, elemVal)
 			e.Field(i).Set(sliceVal)
+		default:
+			break
 		}
 	}
 	return v

@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-
-	"go.olapie.com/conv/internal/rt"
 )
 
 type FieldNameMatcher interface {
@@ -52,11 +50,11 @@ func UnsafeAssign(dst any, src any, optFns ...func(options *UnsafeAssignOptions)
 				log.Println(err)
 			}
 		}()
-		_ = rt.JSONCopy(dst, src)
-		_ = rt.GobCopy(dst, src)
+		_ = JSONCopy(dst, src)
+		_ = GobCopy(dst, src)
 	}()
 
-	dv := rt.IndirectWritableValue(reflect.ValueOf(dst), false)
+	dv := IndirectWritableValue(reflect.ValueOf(dst), false)
 	// dv must be a nil pointer or a valid value
 	err := unsafeAssign(dv, reflect.ValueOf(src), options)
 	if err != nil {
@@ -67,8 +65,8 @@ func UnsafeAssign(dst any, src any, optFns ...func(options *UnsafeAssignOptions)
 
 // dst is valid value or pointer to value
 func unsafeAssign(dst reflect.Value, src reflect.Value, options *UnsafeAssignOptions) error {
-	src = rt.IndirectReadableValue(src)
-	dv := rt.IndirectWritableValue(dst, true)
+	src = IndirectReadableValue(src)
+	dv := IndirectWritableValue(dst, true)
 	switch dv.Kind() {
 	case reflect.Bool:
 		b, err := ToBool(src.Interface())
@@ -117,19 +115,19 @@ func unsafeAssign(dst reflect.Value, src reflect.Value, options *UnsafeAssignOpt
 		}
 		dv.Set(pv.Elem())
 	default:
-		if rt.IsIntValue(dv) {
+		if IsIntValue(dv) {
 			i, err := ToInt64(src.Interface())
 			if err != nil {
 				return fmt.Errorf("parse int64: %w", err)
 			}
 			dv.SetInt(i)
-		} else if rt.IsUintValue(dv) {
+		} else if IsUintValue(dv) {
 			i, err := ToUint64(src.Interface())
 			if err != nil {
 				return fmt.Errorf("parse uint64: %w", err)
 			}
 			dv.SetUint(i)
-		} else if rt.IsFloatValue(dv) {
+		} else if IsFloatValue(dv) {
 			i, err := ToFloat64(src.Interface())
 			if err != nil {
 				return fmt.Errorf("parse float64: %w", err)
@@ -194,7 +192,7 @@ func mapToMap(dst reflect.Value, src reflect.Value, options *UnsafeAssignOptions
 				if dst.IsNil() {
 					dst.Set(reflect.MakeMap(dst.Type()))
 				}
-				err := rt.JSONCopy(addr, src.Interface())
+				err := JSONCopy(addr, src.Interface())
 				if err != nil {
 					return fmt.Errorf("json copy: %w", err)
 				}
@@ -205,7 +203,7 @@ func mapToMap(dst reflect.Value, src reflect.Value, options *UnsafeAssignOptions
 				if dst.IsNil() {
 					dst.Set(reflect.MakeMap(dst.Type()))
 				}
-				err := rt.GobCopy(addr, src.Interface())
+				err := GobCopy(addr, src.Interface())
 				if err != nil {
 					return fmt.Errorf("gob copy: %w", err)
 				}
@@ -313,7 +311,7 @@ func structToStruct(dst reflect.Value, src reflect.Value, options *UnsafeAssignO
 				continue
 			}
 
-			if !rt.IsExported(sfName) || !options.FieldNameMatcher.MatchFieldName(sfName, ft.Name) {
+			if !IsExported(sfName) || !options.FieldNameMatcher.MatchFieldName(sfName, ft.Name) {
 				continue
 			}
 
@@ -328,7 +326,7 @@ func structToStruct(dst reflect.Value, src reflect.Value, options *UnsafeAssignO
 	for i := 0; i < src.NumField(); i++ {
 		sfv := src.Field(i)
 		sfName := src.Type().Field(i).Name
-		if !sfv.IsValid() || (sfv.CanInterface() && sfv.Interface() == nil) || sfv.IsZero() || !rt.IsExported(sfName) {
+		if !sfv.IsValid() || (sfv.CanInterface() && sfv.Interface() == nil) || sfv.IsZero() || !IsExported(sfName) {
 			continue
 		}
 
@@ -358,11 +356,11 @@ func Validate(i any) error {
 		}
 	}
 
-	v = rt.IndirectReadableValue(v)
+	v = IndirectReadableValue(v)
 	if v.Kind() == reflect.Struct {
 		t := v.Type()
 		for j := 0; j < v.NumField(); j++ {
-			if !rt.IsExported(t.Field(j).Name) {
+			if !IsExported(t.Field(j).Name) {
 				continue
 			}
 			if err := Validate(v.Field(j).Interface()); err != nil {
@@ -398,11 +396,11 @@ func UnsafeSetBytes(target any, b []byte) error {
 		return nil
 	}
 
-	v := rt.IndirectReadableValue(reflect.ValueOf(target))
+	v := IndirectReadableValue(reflect.ValueOf(target))
 	if !v.CanSet() {
 		return fmt.Errorf("cannot set value: %T", target)
 	}
-	if rt.IsIntValue(v) {
+	if IsIntValue(v) {
 		i, err := ToInt64(b)
 		if err != nil {
 			return fmt.Errorf("parse int: %v", err)
@@ -410,7 +408,7 @@ func UnsafeSetBytes(target any, b []byte) error {
 		v.SetInt(i)
 	}
 
-	if rt.IsUintValue(v) {
+	if IsUintValue(v) {
 		i, err := ToUint64(b)
 		if err != nil {
 			return fmt.Errorf("parse uint: %w", err)
@@ -418,7 +416,7 @@ func UnsafeSetBytes(target any, b []byte) error {
 		v.SetUint(i)
 	}
 
-	if rt.IsFloatValue(v) {
+	if IsFloatValue(v) {
 		i, err := ToFloat64(b)
 		if err != nil {
 			return fmt.Errorf("parse float: %w", err)

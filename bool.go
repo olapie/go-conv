@@ -5,14 +5,12 @@ import (
 	"log"
 	"reflect"
 	"strconv"
-
-	"go.olapie.com/conv/internal/rt"
 )
 
 // ToBool converts i to bool
 // i can be bool, integer or string
 func ToBool(i any) (bool, error) {
-	i = rt.Indirect(i)
+	i = Indirect(i)
 	switch v := i.(type) {
 	case bool:
 		return v, nil
@@ -42,7 +40,7 @@ func ToBool(i any) (bool, error) {
 // ToBoolSlice converts i to []bool
 // i is an array or slice with elements convertible to bool
 func ToBoolSlice(i any) ([]bool, error) {
-	i = rt.Indirect(i)
+	i = Indirect(i)
 	if i == nil {
 		return nil, nil
 	}

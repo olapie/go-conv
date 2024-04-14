@@ -8,13 +8,10 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-
-	"go.olapie.com/conv/internal/rt"
-	"google.golang.org/protobuf/proto"
 )
 
 func ToBytes(i any) ([]byte, error) {
-	i = rt.Indirect(i)
+	i = Indirect(i)
 	switch v := i.(type) {
 	case []byte:
 		return v, nil
@@ -100,9 +97,6 @@ func UnsafeMarshal(i any) ([]byte, error) {
 	if m, ok := i.(gob.GobEncoder); ok {
 		return m.GobEncode()
 	}
-	if m, ok := i.(proto.Message); ok {
-		return proto.Marshal(m)
-	}
 
 	return nil, errors.New("cannot convert ")
 }
@@ -131,7 +125,7 @@ func UnsafeUnmarshal(data []byte, i any) (err error) {
 
 	// i is a pointer
 	// v is pointer of the same type
-	v := rt.DeepNew(reflect.TypeOf(i).Elem())
+	v := DeepNew(reflect.TypeOf(i).Elem())
 	defer func() {
 		if err == nil {
 			// assign v to i
@@ -156,10 +150,6 @@ func UnsafeUnmarshal(data []byte, i any) (err error) {
 
 		if d, ok := p.Interface().(gob.GobDecoder); ok {
 			return d.GobDecode(data)
-		}
-
-		if m, ok := p.Interface().(proto.Message); ok {
-			return proto.Unmarshal(data, m)
 		}
 	}
 
